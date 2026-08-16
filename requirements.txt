@@ -1,0 +1,6 @@
+requests
+click
+python-dotenv
+pytest
+responses
+ruff
