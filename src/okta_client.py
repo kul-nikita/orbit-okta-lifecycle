@@ -1,9 +1,9 @@
 """Okta REST API client.
 
-Reads ``OKTA_DOMAIN`` and ``OKTA_API_TOKEN`` from the environment
-(optionally via a local ``.env`` file, see ``.env.example``), sends
-authenticated requests, retries with exponential backoff on HTTP 429
-rate limits, and raises :class:`OktaClientError` on failures.
+Reads ``OKTA_DOMAIN`` and ``OKTA_API_TOKEN`` from the environment, sends
+authenticated requests, retries on HTTP 429 rate limits (honoring
+Okta's ``Retry-After`` header when present, otherwise falling back to
+exponential backoff), and raises :class:`OktaClientError` on failures.
 """
 
 import os
@@ -52,7 +52,7 @@ class OktaClient:
         for attempt in range(MAX_RETRIES):
             response = self.session.request(method, url, **kwargs)
             if response.status_code == 429:
-                time.sleep(BACKOFF_BASE_SECONDS * (2**attempt))
+                time.sleep(self._retry_delay(response, attempt))
                 continue
             if response.status_code >= 400:
                 raise OktaClientError(
@@ -61,6 +61,23 @@ class OktaClient:
                 )
             return response
         raise OktaClientError(f"Okta request rate-limited: {method} {url}")
+
+    @staticmethod
+    def _retry_delay(response, attempt):
+        """Seconds to wait before retrying a 429.
+
+        Prefers Okta's ``Retry-After`` header (seconds until the rate
+        limit window resets) when present, since it reflects the
+        server's actual state; falls back to a fixed exponential
+        backoff otherwise.
+        """
+        retry_after = response.headers.get("Retry-After")
+        if retry_after is not None:
+            try:
+                return max(0.0, float(retry_after))
+            except ValueError:
+                pass
+        return BACKOFF_BASE_SECONDS * (2**attempt)
 
     def get(self, path, **kwargs):
         return self.request("GET", path, **kwargs)
