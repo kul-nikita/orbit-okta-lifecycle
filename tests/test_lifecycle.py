@@ -167,6 +167,24 @@ def test_activate_user_already_active_is_noop(okta_env):
 
 
 @responses.activate
+def test_activate_user_already_active_403_is_noop(okta_env):
+    """Some Okta orgs return 403 (not 400) when activating an
+    already-active user; treat it the same way."""
+    responses.add(
+        responses.POST,
+        _url("/users/00u123/lifecycle/activate"),
+        json={"errorSummary": "Activation failed because the user is already active"},
+        status=403,
+        match=[responses.matchers.query_param_matcher({"sendEmail": "true"})],
+    )
+
+    client = OktaClient()
+    result = lifecycle.activate_user(client, "00u123")
+
+    assert result == {"status": "already_active"}
+
+
+@responses.activate
 def test_activate_user_other_error_propagates(okta_env):
     responses.add(
         responses.POST,
