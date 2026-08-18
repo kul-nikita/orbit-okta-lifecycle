@@ -1,5 +1,3 @@
-
-
 import re
 
 from .okta_client import OktaClientError
@@ -58,7 +56,7 @@ def create_user(client, profile, activate=False, group_ids=None):
     return response.json()
 
 
-def activate_user(client, user_id, send_email=True):
+def activate_user(client, user_id, send_email=False):
     """Activate an Okta user by id. Only valid from STAGED status.
 
     Returns the activation response, or {"status": "already_active"}
@@ -67,8 +65,7 @@ def activate_user(client, user_id, send_email=True):
     """
     try:
         response = client.post(
-            f"/users/{user_id}/lifecycle/activate"
-            f"?sendEmail={'true' if send_email else 'false'}"
+            f"/users/{user_id}/lifecycle/activate?sendEmail=false"
         )
     except OktaClientError as e:
         if _status_code_of(e) in (400, 403):
@@ -85,8 +82,7 @@ def deactivate_user(client, user_id, send_email=False):
     """
     try:
         response = client.post(
-            f"/users/{user_id}/lifecycle/deactivate"
-            f"?sendEmail={'true' if send_email else 'false'}"
+            f"/users/{user_id}/lifecycle/deactivate?sendEmail=false"
         )
     except OktaClientError as e:
         if _status_code_of(e) == 400:
