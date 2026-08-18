@@ -3,6 +3,7 @@
 import csv
 
 from . import lifecycle
+from .lifecycle import UserAlreadyExists, ValidationError
 
 EXPORT_FIELDS = [
     "id",
@@ -38,7 +39,6 @@ def export_users_to_csv(client, filepath):
             )
     return filepath
 
-
 def import_users_from_csv(client, filepath):
     """Import users from a CSV file into Okta."""
 
@@ -53,9 +53,14 @@ def import_users_from_csv(client, filepath):
 
         for row in reader:
             try:
-                # Basic validation
-                if not row.get("first_name") or not row.get("last_name") or not row.get("email"):
-                    raise ValueError("CSV row is missing first_name, last_name, or email.")
+                if (
+                    not row.get("first_name")
+                    or not row.get("last_name")
+                    or not row.get("email")
+                ):
+                    raise ValidationError(
+                        "CSV row is missing first_name, last_name, or email."
+                    )
 
                 profile = {
                     "firstName": row["first_name"],
@@ -65,13 +70,20 @@ def import_users_from_csv(client, filepath):
                 }
 
                 lifecycle.create_user(client, profile)
-
                 summary["created"] += 1
 
-            except Exception as exc:
+            except UserAlreadyExists:
+                summary["failed"] += 1
+                summary["errors"].append(
+                    f"{row.get('email', 'Unknown user')}: User already exists."
+                )
+
+            except ValidationError as exc:
                 summary["failed"] += 1
                 summary["errors"].append(
                     f"{row.get('email', 'Unknown user')}: {exc}"
                 )
+
+            
 
     return summary
