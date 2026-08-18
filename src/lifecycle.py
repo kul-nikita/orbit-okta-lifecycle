@@ -5,14 +5,12 @@ from .okta_client import OktaClientError
 
 class UserAlreadyExists(Exception):
     """Raised when Okta returns 409 for a duplicate login/email."""
-    pass
 
 
 class ValidationError(Exception):
     """Raised when Okta rejects the profile as invalid (e.g. malformed
     email, missing required field) — a 400 that is NOT the
     'already active/deactivated' no-op case."""
-    pass
 
 
 def _status_code_of(exc: OktaClientError):
@@ -62,15 +60,15 @@ def activate_user(client, user_id, send_email=False):
     """Activate an Okta user by id. Only valid from STAGED status.
 
     Returns the activation response, or {"status": "already_active"}
-    if the user was already active (Okta 400s on this — treated as a
-    no-op rather than an error).
+    if the user was already active (Okta 400/403 on this — treated
+    as a no-op rather than an error).
     """
     try:
         response = client.post(
             f"/users/{user_id}/lifecycle/activate?sendEmail=false"
         )
     except OktaClientError as e:
-        if _status_code_of(e) == 400:
+        if _status_code_of(e) in (400, 403):
             return {"status": "already_active"}
         raise
     return response.json()
