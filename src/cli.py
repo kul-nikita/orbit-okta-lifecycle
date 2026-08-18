@@ -1,6 +1,6 @@
 """Orbit — Okta user lifecycle orchestration CLI.
 
-Run from the repo root with:  python -m src.cli --help
+Run from the repo root with: python -m src.cli --help
 """
 
 import click
@@ -57,6 +57,30 @@ def export_users(output):
     client = OktaClient()
     export.export_users_to_csv(client, output)
     click.echo(f"Exported users to {output}")
+
+
+# -------------------------
+# Your contribution starts here
+# -------------------------
+
+@cli.command("bulk-import")
+@click.argument("filepath")
+def bulk_import(filepath):
+    """Bulk import users from a CSV file."""
+    client = OktaClient()
+    summary = export.import_users_from_csv(client, filepath)
+
+    click.echo(f"Created: {summary['created']}")
+    click.echo(f"Failed : {summary['failed']}")
+
+    if summary["errors"]:
+        click.echo("\nErrors:")
+        for error in summary["errors"]:
+            click.echo(f"- {error}")
+
+# -------------------------
+# Your contribution ends here
+# -------------------------
 
 
 def main():
