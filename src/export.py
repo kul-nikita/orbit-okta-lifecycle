@@ -3,6 +3,7 @@
 import csv
 
 from . import lifecycle
+from .lifecycle import UserAlreadyExists, ValidationError
 
 EXPORT_FIELDS = [
     "id",
@@ -38,11 +39,51 @@ def export_users_to_csv(client, filepath):
             )
     return filepath
 
-
 def import_users_from_csv(client, filepath):
-    """Import users from a CSV file into Okta.
+    """Import users from a CSV file into Okta."""
 
-    TODO(owner): enhancement — validate the CSV, call
-    ``lifecycle.create_user`` per row, and collect per-row failures.
-    """
-    raise NotImplementedError
+    summary = {
+        "created": 0,
+        "failed": 0,
+        "errors": [],
+    }
+
+    with open(filepath, "r", newline="", encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+
+        for row in reader:
+            try:
+                if (
+                    not row.get("first_name")
+                    or not row.get("last_name")
+                    or not row.get("email")
+                ):
+                    raise ValidationError(
+                        "CSV row is missing first_name, last_name, or email."
+                    )
+
+                profile = {
+                    "firstName": row["first_name"],
+                    "lastName": row["last_name"],
+                    "email": row["email"],
+                    "login": row["email"],
+                }
+
+                lifecycle.create_user(client, profile)
+                summary["created"] += 1
+
+            except UserAlreadyExists:
+                summary["failed"] += 1
+                summary["errors"].append(
+                    f"{row.get('email', 'Unknown user')}: User already exists."
+                )
+
+            except ValidationError as exc:
+                summary["failed"] += 1
+                summary["errors"].append(
+                    f"{row.get('email', 'Unknown user')}: {exc}"
+                )
+
+            
+
+    return summary
