@@ -125,7 +125,7 @@ def test_activate_user_returns_response_json(okta_env):
         _url("/users/00u123/lifecycle/activate"),
         json={"status": "ACTIVE", "activationUrl": "https://example.com/activate"},
         status=200,
-        match=[responses.matchers.query_param_matcher({"sendEmail": "true"})],
+        match=[responses.matchers.query_param_matcher({"sendEmail": "false"})],
     )
 
     client = OktaClient()
@@ -135,17 +135,17 @@ def test_activate_user_returns_response_json(okta_env):
 
 
 @responses.activate
-def test_activate_user_send_email_false_sets_query_param(okta_env):
+def test_activate_user_send_email_true_sets_query_param(okta_env):
     responses.add(
         responses.POST,
         _url("/users/00u123/lifecycle/activate"),
         json={"status": "ACTIVE"},
         status=200,
-        match=[responses.matchers.query_param_matcher({"sendEmail": "false"})],
+        match=[responses.matchers.query_param_matcher({"sendEmail": "true"})],
     )
 
     client = OktaClient()
-    lifecycle.activate_user(client, "00u123", send_email=False)
+    lifecycle.activate_user(client, "00u123", send_email=True)
 
 
 @responses.activate
@@ -157,7 +157,7 @@ def test_activate_user_already_active_is_noop(okta_env):
         _url("/users/00u123/lifecycle/activate"),
         json={"errorSummary": "user already active"},
         status=400,
-        match=[responses.matchers.query_param_matcher({"sendEmail": "true"})],
+        match=[responses.matchers.query_param_matcher({"sendEmail": "false"})],
     )
 
     client = OktaClient()
@@ -175,7 +175,7 @@ def test_activate_user_already_active_403_is_noop(okta_env):
         _url("/users/00u123/lifecycle/activate"),
         json={"errorSummary": "Activation failed because the user is already active"},
         status=403,
-        match=[responses.matchers.query_param_matcher({"sendEmail": "true"})],
+        match=[responses.matchers.query_param_matcher({"sendEmail": "false"})],
     )
 
     client = OktaClient()
@@ -191,7 +191,7 @@ def test_activate_user_other_error_propagates(okta_env):
         _url("/users/00u123/lifecycle/activate"),
         json={"errorSummary": "server error"},
         status=500,
-        match=[responses.matchers.query_param_matcher({"sendEmail": "true"})],
+        match=[responses.matchers.query_param_matcher({"sendEmail": "false"})],
     )
 
     client = OktaClient()

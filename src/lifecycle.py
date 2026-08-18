@@ -65,7 +65,8 @@ def activate_user(client, user_id, send_email=False):
     """
     try:
         response = client.post(
-            f"/users/{user_id}/lifecycle/activate?sendEmail=false"
+            f"/users/{user_id}/lifecycle/activate"
+            f"?sendEmail={'true' if send_email else 'false'}"
         )
     except OktaClientError as e:
         if _status_code_of(e) in (400, 403):
@@ -82,7 +83,8 @@ def deactivate_user(client, user_id, send_email=False):
     """
     try:
         response = client.post(
-            f"/users/{user_id}/lifecycle/deactivate?sendEmail=false"
+            f"/users/{user_id}/lifecycle/deactivate"
+            f"?sendEmail={'true' if send_email else 'false'}"
         )
     except OktaClientError as e:
         if _status_code_of(e) == 400:
