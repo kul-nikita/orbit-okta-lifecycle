@@ -689,36 +689,17 @@ def render_footer():
 # ERROR HANDLING
 # ============================================================
 
+
+
 def friendly_error(exc):
-    """
-    Convert backend exceptions into user-friendly messages.
-    """
-
-    if isinstance(
-        exc,
-        lifecycle.UserAlreadyExists,
-    ):
-        return str(exc)
-
-    if isinstance(
-        exc,
-        lifecycle.ValidationError,
-    ):
-        return str(exc)
-
-    if isinstance(
-        exc,
-        OktaClientError,
-    ):
+    if isinstance(exc, OktaClientError):
         return (
-            "Unable to complete the Okta request. "
-            "Please check the connection and try again."
+            f"{exc}\n\n"
+            f"Status: {exc.status_code}\n"
+            f"Response: {exc.response_body}"
         )
 
-    return (
-        "Something went wrong. "
-        "Please try again."
-    )
+    return str(exc)
 
 
 # ============================================================
@@ -730,6 +711,9 @@ def clear_selected_user():
 
     st.session_state.selected_user = None
     st.session_state.confirm_deactivate = False
+    st.session_state.confirm_delete = False
+    st.session_state.lifecycle_confirm_deactivate = False
+    st.session_state.lifecycle_confirm_delete = False
 
 
 def get_selected_user():

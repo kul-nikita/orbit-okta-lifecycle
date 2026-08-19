@@ -126,6 +126,8 @@ def render_users():
                     "PROVISIONED",
                     "SUSPENDED",
                     "DEACTIVATED",
+                    "LOCKED_OUT",
+                    "RECOVERY",
                 ],
                 format_func=lambda value: (
                     "All statuses"

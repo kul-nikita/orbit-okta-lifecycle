@@ -220,6 +220,8 @@ def render_dashboard():
                 "PROVISIONED",
                 "SUSPENDED",
                 "DEPROVISIONED",
+                "LOCKED_OUT",
+                "RECOVERY",
             ],
             key="dashboard_status_filter",
             format_func=_status_label,
@@ -525,7 +527,7 @@ def render_dashboard():
                     </div>
 
                     <div class="quick-action-description">
-                        Activate or deactivate an existing identity.
+                        Manage activation, suspension, deactivation, unlocking and deletion.
                     </div>
 
                 </div>

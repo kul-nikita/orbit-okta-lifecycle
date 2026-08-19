@@ -1,4 +1,13 @@
-"""Tests for the Okta API client."""
+"""Tests for the Okta API client.
+
+Validates :class:`OktaClient` behaviour using the ``responses`` library
+to mock HTTP calls. Covers authentication headers, retry logic on 429
+rate limits, exponential backoff timing, Retry-After header handling,
+DELETE requests, and error propagation.
+
+Dependencies:
+    pytest, responses, src.okta_client
+"""
 
 import pytest
 import responses
@@ -50,6 +59,8 @@ def test_http_error_raises(okta_env):
 
 
 def test_missing_config_raises(monkeypatch):
+    monkeypatch.delenv("OKTA_DOMAIN_1", raising=False)
+    monkeypatch.delenv("OKTA_API_TOKEN_1", raising=False)
     monkeypatch.delenv("OKTA_DOMAIN", raising=False)
     monkeypatch.delenv("OKTA_API_TOKEN", raising=False)
 
@@ -72,15 +83,15 @@ def test_delete_sends_auth_and_returns_response(okta_env):
 @responses.activate
 def test_429_exhaustion_raises_after_max_retries(okta_env, monkeypatch):
     monkeypatch.setattr("time.sleep", lambda _: None)
-    for _ in range(5):
+    for _ in range(6):
         responses.add(responses.GET, _url("/users"), status=429)
 
     client = OktaClient()
     with pytest.raises(OktaClientError, match="rate-limited"):
         client.get("/users")
 
-    # MAX_RETRIES attempts were made, no successful response ever returned.
-    assert len(responses.calls) == 5
+    # MAX_RETRIES + 1 attempts were made, no successful response ever returned.
+    assert len(responses.calls) == 6
 
 
 @responses.activate

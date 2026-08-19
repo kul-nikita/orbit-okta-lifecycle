@@ -1,7 +1,16 @@
 """Integration test for Okta user lifecycle.
 
-Hits the real Okta API using credentials from .env.
-Cleans up after itself regardless of pass/fail.
+Hits the real Okta API using credentials from ``.env`` and runs a
+full lifecycle sequence: create user, activate (verify no-op), export
+to CSV (verify user appears), deactivate, and delete (cleanup).
+Always cleans up in a ``finally`` block regardless of pass/fail.
+
+Dependencies:
+    csv, os, sys, uuid, traceback, src.okta_client, src.lifecycle, src.export
+
+Run with::
+
+    python tests/integration_test.py
 """
 
 import csv

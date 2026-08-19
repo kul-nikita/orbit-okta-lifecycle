@@ -214,6 +214,8 @@ def render_create_user():
                 """
             )
 
+            send_email = st.checkbox("Send activation email", value=True)
+
             st.divider()
 
             # ------------------------------------------------
@@ -301,6 +303,7 @@ def render_create_user():
                     get_client(),
                     profile,
                     activate=activate_now,
+                    send_email=send_email,
                 )
 
             # Store result for the next rerender.
