@@ -7,35 +7,17 @@ Run from the repo root with:
 
 from __future__ import annotations
 
-import json
-
 import click
 from dotenv import load_dotenv
 
-from . import export, lifecycle
-from .okta_client import OktaClient, OktaClientError
-
-
-def _client():
-    return OktaClient()
-
-
-def _print_user_result(result):
-    """Print a consistent lifecycle result."""
-    status = result.get("status", "unknown")
-    user = result.get("user") or {}
-
-    user_id = user.get("id") or result.get("user_id")
-
-    if user_id:
-        click.echo(f"Status: {status}")
-        click.echo(f"User  : {user_id}")
-    else:
-        click.echo(f"Status: {status}")
+from . import export, multi
+from .okta_client import OktaClientError, get_clients
 
 
 def _handle_error(exc):
     """Turn known application errors into useful CLI errors."""
+    from . import lifecycle
+
     if isinstance(exc, lifecycle.UserAlreadyExists):
         raise click.ClickException(str(exc))
 
@@ -54,27 +36,29 @@ def _handle_error(exc):
     raise exc
 
 
+def _print_result(label, result):
+    """Print a multi-tenant lifecycle result."""
+    if isinstance(result, dict) and "error" in result:
+        click.echo(f"  [{label}] Error: {result['error']}")
+    else:
+        status = result.get("status", "unknown") if isinstance(result, dict) else str(result)
+        user = result.get("user", {}) if isinstance(result, dict) else {}
+        user_id = user.get("id") if isinstance(user, dict) else None
+        if user_id:
+            click.echo(f"  [{label}] Status: {status}  User: {user_id}")
+        else:
+            click.echo(f"  [{label}] Status: {status}")
+
+
 @click.group()
 def cli():
-    """Orbit commands for managing Okta user lifecycle."""
+    """Orbit commands for managing Okta user lifecycle across multiple tenants."""
 
 
 @cli.command()
-@click.option(
-    "--email",
-    required=True,
-    help="Login/email for the user.",
-)
-@click.option(
-    "--first-name",
-    required=True,
-    help="User's first name.",
-)
-@click.option(
-    "--last-name",
-    required=True,
-    help="User's last name.",
-)
+@click.option("--email", required=True, help="Login email for the new user.")
+@click.option("--first-name", required=True, help="User's first name.")
+@click.option("--last-name", required=True, help="User's last name.")
 @click.option(
     "--activate/--no-activate",
     default=True,
@@ -87,15 +71,12 @@ def cli():
     show_default=True,
     help="Ask Okta to send the activation email.",
 )
-def create(
-    email,
-    first_name,
-    last_name,
-    activate,
-    send_email,
-):
-    """Create a user, or reconcile an existing login."""
-    client = _client()
+def create(email, first_name, last_name, activate, send_email):
+    """Create a user, or reconcile an existing login on all tenants."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
+        return
 
     profile = {
         "email": email,
@@ -104,18 +85,10 @@ def create(
         "lastName": last_name,
     }
 
-    try:
-        result = lifecycle.create_or_ensure_user(
-            client,
-            profile,
-            activate=activate,
-            send_email=send_email,
-        )
-    except Exception as exc:
-        _handle_error(exc)
-        return
+    results = multi.create_user(clients, profile, activate=activate, send_email=send_email)
 
-    _print_user_result(result)
+    for label, result in results.items():
+        _print_result(label, result)
 
     if activate:
         click.echo(
@@ -128,16 +101,16 @@ def create(
 @cli.command()
 @click.argument("user_id")
 def get(user_id):
-    """Get the current Okta state of a user."""
-    client = _client()
-
-    try:
-        user = lifecycle.get_user(client, user_id)
-    except Exception as exc:
-        _handle_error(exc)
+    """Get the current Okta state of a user on all tenants."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
         return
 
-    click.echo(json.dumps(user, indent=2))
+    results = multi.get_user(clients, user_id)
+
+    for label, result in results.items():
+        _print_result(label, result)
 
 
 @cli.command()
@@ -148,20 +121,16 @@ def get(user_id):
     show_default=True,
 )
 def activate(user_id, send_email):
-    """Activate a STAGED or DEPROVISIONED user."""
-    client = _client()
-
-    try:
-        result = lifecycle.activate_user(
-            client,
-            user_id,
-            send_email=send_email,
-        )
-    except Exception as exc:
-        _handle_error(exc)
+    """Activate a STAGED or DEPROVISIONED user on all tenants."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
         return
 
-    _print_user_result(result)
+    results = multi.activate_user(clients, user_id, send_email=send_email)
+
+    for label, result in results.items():
+        _print_result(label, result)
 
 
 @cli.command()
@@ -172,20 +141,16 @@ def activate(user_id, send_email):
     show_default=True,
 )
 def reactivate(user_id, send_email):
-    """Restart activation for a PROVISIONED or RECOVERY user."""
-    client = _client()
-
-    try:
-        result = lifecycle.reactivate_user(
-            client,
-            user_id,
-            send_email=send_email,
-        )
-    except Exception as exc:
-        _handle_error(exc)
+    """Restart activation for a PROVISIONED or RECOVERY user on all tenants."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
         return
 
-    _print_user_result(result)
+    results = multi.reactivate_user(clients, user_id, send_email=send_email)
+
+    for label, result in results.items():
+        _print_result(label, result)
 
 
 @cli.command()
@@ -196,74 +161,61 @@ def reactivate(user_id, send_email):
     show_default=True,
 )
 def deactivate(user_id, send_email):
-    """Deactivate any user that is not already DEPROVISIONED."""
-    client = _client()
-
-    try:
-        result = lifecycle.deactivate_user(
-            client,
-            user_id,
-            send_email=send_email,
-        )
-    except Exception as exc:
-        _handle_error(exc)
+    """Deactivate any user that is not already DEPROVISIONED on all tenants."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
         return
 
-    _print_user_result(result)
+    results = multi.deactivate_user(clients, user_id, send_email=send_email)
+
+    for label, result in results.items():
+        _print_result(label, result)
 
 
 @cli.command()
 @click.argument("user_id")
 def suspend(user_id):
-    """Suspend an ACTIVE user."""
-    client = _client()
-
-    try:
-        result = lifecycle.suspend_user(
-            client,
-            user_id,
-        )
-    except Exception as exc:
-        _handle_error(exc)
+    """Suspend an ACTIVE user on all tenants."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
         return
 
-    _print_user_result(result)
+    results = multi.suspend_user(clients, user_id)
+
+    for label, result in results.items():
+        _print_result(label, result)
 
 
 @cli.command()
 @click.argument("user_id")
 def unsuspend(user_id):
-    """Unsuspend a SUSPENDED user."""
-    client = _client()
-
-    try:
-        result = lifecycle.unsuspend_user(
-            client,
-            user_id,
-        )
-    except Exception as exc:
-        _handle_error(exc)
+    """Unsuspend a SUSPENDED user on all tenants."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
         return
 
-    _print_user_result(result)
+    results = multi.unsuspend_user(clients, user_id)
+
+    for label, result in results.items():
+        _print_result(label, result)
 
 
 @cli.command()
 @click.argument("user_id")
 def unlock(user_id):
-    """Unlock a LOCKED_OUT user."""
-    client = _client()
-
-    try:
-        result = lifecycle.unlock_user(
-            client,
-            user_id,
-        )
-    except Exception as exc:
-        _handle_error(exc)
+    """Unlock a LOCKED_OUT user on all tenants."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
         return
 
-    _print_user_result(result)
+    results = multi.unlock_user(clients, user_id)
+
+    for label, result in results.items():
+        _print_result(label, result)
 
 
 @cli.command("ensure-active")
@@ -274,20 +226,16 @@ def unlock(user_id):
     show_default=True,
 )
 def ensure_active(user_id, send_email):
-    """Move an existing user toward ACTIVE."""
-    client = _client()
-
-    try:
-        result = lifecycle.ensure_user_active(
-            client,
-            user_id,
-            send_email=send_email,
-        )
-    except Exception as exc:
-        _handle_error(exc)
+    """Move an existing user toward ACTIVE on all tenants."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
         return
 
-    _print_user_result(result)
+    results = multi.ensure_user_active(clients, user_id, send_email=send_email)
+
+    for label, result in results.items():
+        _print_result(label, result)
 
 
 @cli.command()
@@ -296,19 +244,16 @@ def ensure_active(user_id, send_email):
     prompt="Are you sure you want to permanently delete this user?"
 )
 def delete(user_id):
-    """Permanently delete a DEPROVISIONED user."""
-    client = _client()
-
-    try:
-        result = lifecycle.delete_user(
-            client,
-            user_id,
-        )
-    except Exception as exc:
-        _handle_error(exc)
+    """Permanently delete a DEPROVISIONED user on all tenants."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
         return
 
-    _print_user_result(result)
+    results = multi.delete_user(clients, user_id)
+
+    for label, result in results.items():
+        _print_result(label, result)
 
 
 @cli.command("list")
@@ -324,29 +269,25 @@ def delete(user_id):
     help="Okta filter expression.",
 )
 def list_users(search, filter_):
-    """List Okta users, following all pagination."""
-    client = _client()
-
-    try:
-        users = lifecycle.list_users(
-            client,
-            search=search,
-            filter_=filter_,
-        )
-    except Exception as exc:
-        _handle_error(exc)
+    """List Okta users from all tenants, following all pagination."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
         return
 
-    for user in users:
+    all_users = multi.list_users(clients, search=search, filter_=filter_)
+
+    for user in all_users:
         profile = user.get("profile", {})
+        tenant = user.get("_tenant", "unknown")
 
         click.echo(
-            f"{user.get('id')} | "
+            f"[{tenant}] {user.get('id')} | "
             f"{user.get('status')} | "
             f"{profile.get('login')}"
         )
 
-    click.echo(f"\nTotal: {len(users)}")
+    click.echo(f"\nTotal: {len(all_users)}")
 
 
 @cli.command("export")
@@ -357,44 +298,39 @@ def list_users(search, filter_):
     help="Path to the output CSV file.",
 )
 def export_users(output):
-    """Export all Okta users to a CSV file."""
-    client = _client()
-
-    try:
-        export.export_users_to_csv(
-            client,
-            output,
-        )
-    except Exception as exc:
-        _handle_error(exc)
+    """Export all Okta users from all tenants to a CSV file."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
         return
 
-    click.echo(f"Exported users to {output}")
+    all_users = multi.list_users(clients)
+    click.echo(f"  Loaded {len(all_users)} user(s) from {len(clients)} tenant(s)")
+
+    export.export_users_to_csv_from_list(all_users, output)
+    click.echo(f"  Exported users to {output}")
 
 
 @cli.command("bulk-import")
 @click.argument("filepath")
 def bulk_import(filepath):
-    """Bulk import users from a CSV file."""
-    client = _client()
-
-    try:
-        summary = export.import_users_from_csv(
-            client,
-            filepath,
-        )
-    except Exception as exc:
-        _handle_error(exc)
+    """Bulk import users from a CSV file to all configured tenants."""
+    clients = get_clients()
+    if not clients:
+        click.echo("Error: no Okta tenants configured. Check your .env file.", err=True)
         return
 
-    click.echo(f"Created: {summary['created']}")
-    click.echo(f"Failed : {summary['failed']}")
+    for client in clients:
+        click.echo(f"\n--- Importing to [{client.label}] ({client.domain}) ---")
+        summary = export.import_users_from_csv(client, filepath)
 
-    if summary["errors"]:
-        click.echo("\nErrors:")
+        click.echo(f"  Created: {summary['created']}")
+        click.echo(f"  Failed : {summary['failed']}")
 
-        for error in summary["errors"]:
-            click.echo(f"- {error}")
+        if summary["errors"]:
+            click.echo("\n  Errors:")
+            for error in summary["errors"]:
+                click.echo(f"  - {error}")
 
 
 def main():

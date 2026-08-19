@@ -17,8 +17,12 @@ from src.okta_client import OktaClient, OktaClientError
 
 @pytest.fixture
 def okta_env(monkeypatch):
-    monkeypatch.setenv("OKTA_DOMAIN", "dev-000000.okta.com")
-    monkeypatch.setenv("OKTA_API_TOKEN", "test-token")
+    monkeypatch.setenv("OKTA_DOMAIN_1", "dev-000000.okta.com")
+    monkeypatch.setenv("OKTA_API_TOKEN_1", "test-token")
+    monkeypatch.delenv("OKTA_DOMAIN", raising=False)
+    monkeypatch.delenv("OKTA_API_TOKEN", raising=False)
+    monkeypatch.delenv("OKTA_DOMAIN_2", raising=False)
+    monkeypatch.delenv("OKTA_API_TOKEN_2", raising=False)
 
 
 def _url(path=""):

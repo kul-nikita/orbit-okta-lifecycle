@@ -6,7 +6,7 @@ from html import escape
 import streamlit as st
 
 from src import lifecycle
-from src.okta_client import OktaClient, OktaClientError
+from src.okta_client import OktaClient, OktaClientError, get_clients
 
 # ============================================================
 # HTML HELPER
@@ -33,13 +33,25 @@ def html(content):
 # ============================================================
 
 def get_client():
-    """Create an Okta client from environment configuration."""
+    """Create an Okta client from environment configuration (Tenant 1)."""
     return OktaClient()
 
 
+def get_all_clients():
+    """Return all configured tenant clients."""
+    return get_clients()
+
+
 def load_users():
-    """Load all users through the lifecycle layer."""
-    return lifecycle.list_users(get_client())
+    """Load all users from all tenants, tagged with _tenant."""
+    clients = get_all_clients()
+    all_users = []
+    for client in clients:
+        users = lifecycle.list_users(client)
+        for user in users:
+            user["_tenant"] = client.label
+        all_users.extend(users)
+    return all_users
 
 
 # ============================================================

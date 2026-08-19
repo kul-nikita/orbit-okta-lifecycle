@@ -333,8 +333,8 @@ def render_dashboard():
             # TABLE HEADER
             # ------------------------------------------------
 
-            h1, h2, h3, h4 = st.columns(
-                [1.6, 2.5, 1.3, 0.8],
+            h1, h2, h3, h4, h5 = st.columns(
+                [1.4, 2.2, 1.1, 0.9, 0.8],
                 gap="medium",
             )
 
@@ -373,6 +373,16 @@ def render_dashboard():
                 html(
                     """
                     <div class="table-header">
+                        TENANT
+                    </div>
+                    """
+                )
+
+            with h5:
+
+                html(
+                    """
+                    <div class="table-header">
                         ACTION
                     </div>
                     """
@@ -399,8 +409,8 @@ def render_dashboard():
                     get_user_email(user)
                 )
 
-                c1, c2, c3, c4 = st.columns(
-                    [1.6, 2.5, 1.3, 0.8],
+                c1, c2, c3, c4, c5 = st.columns(
+                    [1.4, 2.2, 1.1, 0.9, 0.8],
                     gap="medium",
                 )
 
@@ -433,6 +443,16 @@ def render_dashboard():
                     )
 
                 with c4:
+                    tenant = user.get("_tenant", "—")
+                    html(
+                        f"""
+                        <div class="user-email">
+                            {tenant}
+                        </div>
+                        """
+                    )
+
+                with c5:
 
                     if st.button(
                         "View",

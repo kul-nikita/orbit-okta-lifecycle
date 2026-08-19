@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from src.ui.components import html
+from src.ui.components import get_all_clients, html
 
 # ============================================================
 # NAVIGATION
@@ -184,8 +184,15 @@ def render_sidebar():
         # ENVIRONMENT
         # ====================================================
 
+        clients = get_all_clients()
+        tenant_count = len(clients)
+
+        tenant_names = " + ".join(
+            c.label for c in clients
+        ) if clients else "None"
+
         html(
-            """
+            f"""
             <div class="environment-box">
 
                 <div class="environment-label">
@@ -197,9 +204,18 @@ def render_sidebar():
                     <span class="environment-dot"></span>
 
                     <span>
-                        Okta Connected
+                        {tenant_count} tenant{"s" if tenant_count != 1 else ""} connected
                     </span>
 
+                </div>
+
+                <div style="
+                    color: #64748B;
+                    font-size: 0.68rem;
+                    margin-top: 0.35rem;
+                    font-weight: 500;
+                ">
+                    {tenant_names}
                 </div>
 
             </div>

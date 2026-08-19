@@ -50,19 +50,28 @@ class OktaClient:
         self,
         domain: str | None = None,
         api_token: str | None = None,
+        label: str | None = None,
         session: requests.Session | None = None,
     ):
         self.domain = (
-            domain or os.getenv("OKTA_DOMAIN") or ""
+            domain
+            or os.getenv("OKTA_DOMAIN_1")
+            or os.getenv("OKTA_DOMAIN")
+            or ""
         ).strip().rstrip("/")
 
         self.api_token = (
-            api_token or os.getenv("OKTA_API_TOKEN") or ""
+            api_token
+            or os.getenv("OKTA_API_TOKEN_1")
+            or os.getenv("OKTA_API_TOKEN")
+            or ""
         ).strip()
+
+        self.label = label or "Tenant 1"
 
         if not self.domain or not self.api_token:
             raise OktaClientError(
-                "OKTA_DOMAIN and OKTA_API_TOKEN must be set "
+                "OKTA_DOMAIN_1 and OKTA_API_TOKEN_1 must be set "
                 "(see .env.example)."
             )
 
@@ -178,3 +187,31 @@ class OktaClient:
 
     def delete(self, path: str, **kwargs) -> requests.Response:
         return self.request("DELETE", path, **kwargs)
+
+
+def get_clients():
+    """Create OktaClient instances for all configured tenants.
+
+    Reads ``OKTA_DOMAIN_1``/``OKTA_API_TOKEN_1`` and optionally
+    ``OKTA_DOMAIN_2``/``OKTA_API_TOKEN_2`` from the environment.
+    Returns a list of configured ``OktaClient`` instances.
+    """
+    clients = []
+
+    domain_1 = os.getenv("OKTA_DOMAIN_1") or os.getenv("OKTA_DOMAIN")
+    token_1 = os.getenv("OKTA_API_TOKEN_1") or os.getenv("OKTA_API_TOKEN")
+
+    if domain_1 and token_1:
+        clients.append(
+            OktaClient(domain=domain_1, api_token=token_1, label="Tenant 1")
+        )
+
+    domain_2 = os.getenv("OKTA_DOMAIN_2")
+    token_2 = os.getenv("OKTA_API_TOKEN_2")
+
+    if domain_2 and token_2:
+        clients.append(
+            OktaClient(domain=domain_2, api_token=token_2, label="Tenant 2")
+        )
+
+    return clients

@@ -1,4 +1,28 @@
-"""CSV import/export helpers for Okta users."""
+"""CSV import/export helpers for Okta users.
+
+Provides ``export_users_to_csv`` for bulk export of all Okta users
+to a CSV file, and ``import_users_from_csv`` for bulk creation of
+users from a CSV. Import validates each row and collects per-row
+success/failure summaries.
+
+Dependencies:
+    csv, src.lifecycle (list_users, create_user, UserAlreadyExists, ValidationError)
+
+Expected CSV columns (for import):
+    first_name, last_name, email
+
+Exported CSV columns:
+    id, status, email, login, first_name, last_name, tenant
+
+Example usage::
+
+    from src.okta_client import OktaClient
+    from src import export
+
+    client = OktaClient()
+    export.export_users_to_csv(client, "users.csv")
+    summary = export.import_users_from_csv(client, "new_users.csv")
+"""
 
 import csv
 
@@ -12,16 +36,20 @@ EXPORT_FIELDS = [
     "login",
     "first_name",
     "last_name",
+    "tenant",
 ]
 
 
 def export_users_to_csv(client, filepath):
-    """Write every Okta user to a CSV file at ``filepath``.
-
-    TODO(owner): confirm the column set, add streaming for large exports,
-    and handle missing profile attributes.
-    """
+    """Write every Okta user to a CSV file at ``filepath``."""
     users = lifecycle.list_users(client)
+    for user in users:
+        user["_tenant"] = getattr(client, "label", "Tenant 1")
+    return export_users_to_csv_from_list(users, filepath)
+
+
+def export_users_to_csv_from_list(users, filepath):
+    """Write a pre-loaded list of users (with _tenant tag) to CSV."""
     with open(filepath, "w", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(fh, fieldnames=EXPORT_FIELDS)
         writer.writeheader()
@@ -35,9 +63,11 @@ def export_users_to_csv(client, filepath):
                     "login": profile.get("login"),
                     "first_name": profile.get("firstName"),
                     "last_name": profile.get("lastName"),
+                    "tenant": user.get("_tenant", ""),
                 }
             )
     return filepath
+
 
 def import_users_from_csv(client, filepath):
     """Import users from a CSV file into Okta."""
@@ -83,7 +113,5 @@ def import_users_from_csv(client, filepath):
                 summary["errors"].append(
                     f"{row.get('email', 'Unknown user')}: {exc}"
                 )
-
-            
 
     return summary

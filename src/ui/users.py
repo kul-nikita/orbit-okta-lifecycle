@@ -225,8 +225,8 @@ def render_users():
         with st.container(border=True):
 
             # Table header
-            h1, h2, h3, h4 = st.columns(
-                [1.6, 2.8, 1.4, 1]
+            h1, h2, h3, h4, h5 = st.columns(
+                [1.4, 2.4, 1.2, 1.0, 1]
             )
 
             with h1:
@@ -248,6 +248,12 @@ def render_users():
                 )
 
             with h4:
+                st.markdown(
+                    '<div class="table-header">TENANT</div>',
+                    unsafe_allow_html=True,
+                )
+
+            with h5:
                 st.markdown(
                     '<div class="table-header">ACTION</div>',
                     unsafe_allow_html=True,
@@ -280,8 +286,8 @@ def render_users():
 
             for index, user in enumerate(visible_users):
 
-                c1, c2, c3, c4 = st.columns(
-                    [1.6, 2.8, 1.4, 1]
+                c1, c2, c3, c4, c5 = st.columns(
+                    [1.4, 2.4, 1.2, 1.0, 1]
                 )
 
                 with c1:
@@ -313,6 +319,17 @@ def render_users():
                     )
 
                 with c4:
+                    tenant = user.get("_tenant", "—")
+                    st.markdown(
+                        f"""
+                        <div class="user-email">
+                            {tenant}
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                with c5:
                     if st.button(
                         "View →",
                         key=(
