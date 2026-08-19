@@ -17,7 +17,6 @@ from src.ui.components import (
     status_badge,
 )
 
-
 # ============================================================
 # HELPERS
 # ============================================================
@@ -115,7 +114,7 @@ def render_dashboard():
         with st.spinner("Loading Okta directory..."):
             users = load_users()
 
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
 
         st.error(
             "Unable to load dashboard data: "
@@ -472,14 +471,12 @@ def render_dashboard():
     # CREATE USER
     # --------------------------------------------------------
 
-    with a1:
+    with a1, st.container(
+        border=True,
+    ):
 
-        with st.container(
-            border=True,
-        ):
-
-            html(
-                """
+        html(
+            """
                 <div class="quick-action">
 
                     <div class="quick-action-icon">
@@ -496,29 +493,27 @@ def render_dashboard():
 
                 </div>
                 """
-            )
+        )
 
-            if st.button(
-                "Create User",
-                key="dashboard_create",
-                type="primary",
-                use_container_width=True,
-            ):
+        if st.button(
+            "Create User",
+            key="dashboard_create",
+            type="primary",
+            use_container_width=True,
+        ):
 
-                _go_to("Create User")
+            _go_to("Create User")
 
     # --------------------------------------------------------
     # LIFECYCLE
     # --------------------------------------------------------
 
-    with a2:
+    with a2, st.container(
+        border=True,
+    ):
 
-        with st.container(
-            border=True,
-        ):
-
-            html(
-                """
+        html(
+            """
                 <div class="quick-action">
 
                     <div class="quick-action-icon">
@@ -535,28 +530,26 @@ def render_dashboard():
 
                 </div>
                 """
-            )
+        )
 
-            if st.button(
-                "Manage Lifecycle",
-                key="dashboard_lifecycle",
-                use_container_width=True,
-            ):
+        if st.button(
+            "Manage Lifecycle",
+            key="dashboard_lifecycle",
+            use_container_width=True,
+        ):
 
-                _go_to("Lifecycle")
+            _go_to("Lifecycle")
 
     # --------------------------------------------------------
     # EXPORT
     # --------------------------------------------------------
 
-    with a3:
+    with a3, st.container(
+        border=True,
+    ):
 
-        with st.container(
-            border=True,
-        ):
-
-            html(
-                """
+        html(
+            """
                 <div class="quick-action">
 
                     <div class="quick-action-icon">
@@ -573,12 +566,12 @@ def render_dashboard():
 
                 </div>
                 """
-            )
+        )
 
-            if st.button(
-                "Export Users",
-                key="dashboard_export",
-                use_container_width=True,
-            ):
+        if st.button(
+            "Export Users",
+            key="dashboard_export",
+            use_container_width=True,
+        ):
 
-                _go_to("Export")
+            _go_to("Export")

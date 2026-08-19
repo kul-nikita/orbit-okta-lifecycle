@@ -98,4 +98,19 @@ default command:
 docker run --rm --env-file .env orbit python -m src.cli --help
 ```
 
-Never commit a `.env` file containing a real Okta API token.
+Development
+
+- Dev tools (tests, linters) were moved to `dev-requirements.txt` to keep the runtime image smaller:
+
+```
+python -m pip install -r dev-requirements.txt
+```
+
+CI
+
+- GitHub Actions now builds the Docker image and runs a small smoke test to ensure Streamlit is available in the image. See `.github/workflows/ci.yml`.
+
+Notes
+
+- Pinning runtime dependency versions in `requirements.txt` improves reproducible builds.
+- Never commit a `.env` file containing a real Okta API token.

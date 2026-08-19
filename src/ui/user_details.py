@@ -3,7 +3,6 @@
 import streamlit as st
 
 from src import lifecycle
-
 from src.ui.components import (
     clear_selected_user,
     friendly_error,
@@ -274,7 +273,7 @@ def render_user_details():
 
                     st.rerun()
 
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
 
                     st.error(
                         friendly_error(exc)
@@ -386,7 +385,7 @@ def render_user_details():
 
                         st.rerun()
 
-                    except Exception as exc:
+                    except Exception as exc:  # noqa: BLE001
 
                         st.session_state.confirm_deactivate = False
 
