@@ -1,5 +1,8 @@
+# GitHub Actions CI pipeline for Orbit
+# Runs linting and tests on every push to main and on pull requests.
 name: CI
 
+# Trigger on pushes to main, on all pull requests, and allow manual runs
 on:
   push:
     branches: [main]
@@ -10,14 +13,32 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
+      # Clone the repository
       - uses: actions/checkout@v4
+
+      # Set up Python 3.11 with pip caching for faster installs
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
+
+      # Install all dependencies from requirements.txt
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          # Install dev tools needed for linting and tests
+          if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
+
+      # Run ruff linter to catch code style and error issues
       - name: Lint
         run: ruff check .
+
+      # Run the full test suite with verbose output
       - name: Test
         run: pytest -v
+      - name: Build Docker image
+        run: |
+          docker build -t orbit:ci .
+      - name: Smoke-test Docker image (check Streamlit import)
+        run: |
+          docker run --rm --env-file .env.example orbit:ci python -c "import streamlit,sys; print('streamlit', streamlit.__version__); sys.exit(0)"
