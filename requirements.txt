@@ -1,6 +1,7 @@
 requests
 click
 python-dotenv
+streamlit
 pytest
 responses
 ruff

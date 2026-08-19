@@ -75,7 +75,27 @@ On every push / pull request, GitHub Actions runs `ruff check .` and
 
 ## Docker
 
+The default container runs the Streamlit web interface on port 8501.
+
+```
+cp .env.example .env
+docker compose up --build
+```
+
+Open `http://localhost:8501` in your browser. Stop the app with `Ctrl+C`.
+
+To run it without Docker Compose:
+
 ```
 docker build -t orbit .
-docker run --rm --env-file .env orbit --help
+docker run --rm -p 8501:8501 --env-file .env orbit
 ```
+
+The same image can also run the command-line interface by overriding its
+default command:
+
+```
+docker run --rm --env-file .env orbit python -m src.cli --help
+```
+
+Never commit a `.env` file containing a real Okta API token.
