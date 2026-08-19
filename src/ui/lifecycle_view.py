@@ -103,6 +103,10 @@ def render_lifecycle():
                 st.columns(3)
             )
 
+            # ------------------------------------------------
+            # Name and email
+            # ------------------------------------------------
+
             with profile_col1:
 
                 st.caption("NAME")
@@ -123,6 +127,10 @@ def render_lifecycle():
                     unsafe_allow_html=True,
                 )
 
+            # ------------------------------------------------
+            # Status and Okta ID
+            # ------------------------------------------------
+
             with profile_col2:
 
                 st.caption("CURRENT STATUS")
@@ -140,6 +148,10 @@ def render_lifecycle():
                     f'</div>',
                     unsafe_allow_html=True,
                 )
+
+            # ------------------------------------------------
+            # Lifecycle state
+            # ------------------------------------------------
 
             with profile_col3:
 
@@ -159,6 +171,10 @@ def render_lifecycle():
         st.markdown("### Lifecycle Action")
 
         with st.container(border=True):
+
+            # =================================================
+            # ACTIVE
+            # =================================================
 
             if status == "ACTIVE":
 
@@ -180,10 +196,16 @@ def render_lifecycle():
                 ):
 
                     st.session_state.selected_user = selected
+
                     st.session_state.confirm_deactivate = True
+
                     st.session_state.page = "User Details"
 
                     st.rerun()
+
+            # =================================================
+            # STAGED
+            # =================================================
 
             elif status == "STAGED":
 
@@ -220,7 +242,9 @@ def render_lifecycle():
                                 send_email=send_email,
                             )
 
-                        if result.get("status") == "already_active":
+                        if result.get(
+                            "status"
+                        ) == "already_active":
 
                             st.info(
                                 "User is already active."
@@ -239,6 +263,28 @@ def render_lifecycle():
                         st.error(
                             friendly_error(exc)
                         )
+
+            # =================================================
+            # PROVISIONED
+            # =================================================
+
+            elif status == "PROVISIONED":
+
+                st.markdown("### ● User is provisioned")
+
+                st.write(
+                    "This identity has been provisioned "
+                    "and is awaiting completion of activation."
+                )
+
+                st.info(
+                    "No lifecycle action is currently "
+                    "required for a provisioned user."
+                )
+
+            # =================================================
+            # DEPROVISIONED / DEACTIVATED
+            # =================================================
 
             elif status in {
                 "DEPROVISIONED",
@@ -292,6 +338,10 @@ def render_lifecycle():
                             friendly_error(exc)
                         )
 
+            # =================================================
+            # SUSPENDED
+            # =================================================
+
             elif status == "SUSPENDED":
 
                 st.markdown(
@@ -302,6 +352,10 @@ def render_lifecycle():
                     "Lifecycle activation is not available "
                     "for suspended users."
                 )
+
+            # =================================================
+            # UNKNOWN / OTHER STATUS
+            # =================================================
 
             else:
 
@@ -320,7 +374,9 @@ def render_lifecycle():
         ):
 
             st.session_state.page = "Users"
+
             st.session_state.selected_user = None
+
             st.session_state.confirm_deactivate = False
 
             st.rerun()
