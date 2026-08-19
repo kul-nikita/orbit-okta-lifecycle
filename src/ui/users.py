@@ -12,7 +12,6 @@ from src.ui.components import (
     status_badge,
 )
 
-
 PAGE_SIZE = 5
 
 
@@ -415,7 +414,7 @@ def render_users():
             st.session_state.page = "Create User"
             st.rerun()
 
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
 
         st.error(
             "Unable to load users: "

@@ -229,41 +229,35 @@ def render_export():
 
         info1, info2, info3 = st.columns(3)
 
-        with info1:
+        with info1, st.container(border=True):
 
-            with st.container(border=True):
+            st.markdown("### CSV")
 
-                st.markdown("### CSV")
+            st.caption(
+                "Portable comma-separated format "
+                "compatible with spreadsheets and "
+                "administration tools."
+            )
 
-                st.caption(
-                    "Portable comma-separated format "
-                    "compatible with spreadsheets and "
-                    "administration tools."
-                )
+        with info2, st.container(border=True):
 
-        with info2:
+            st.markdown("### Directory")
 
-            with st.container(border=True):
+            st.caption(
+                f"{len(users)} identities are currently "
+                "available in the Okta directory."
+            )
 
-                st.markdown("### Directory")
+        with info3, st.container(border=True):
 
-                st.caption(
-                    f"{len(users)} identities are currently "
-                    "available in the Okta directory."
-                )
+            st.markdown("### Secure")
 
-        with info3:
+            st.caption(
+                "The export is generated from the "
+                "currently loaded directory data."
+            )
 
-            with st.container(border=True):
-
-                st.markdown("### Secure")
-
-                st.caption(
-                    "The export is generated from the "
-                    "currently loaded directory data."
-                )
-
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
 
         st.error(
             "Unable to export users: "

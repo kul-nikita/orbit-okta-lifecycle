@@ -2,16 +2,15 @@
 
 import streamlit as st
 
-from src.ui.styles import load_styles
-from src.ui.sidebar import render_sidebar
-from src.ui.dashboard import render_dashboard
-from src.ui.users import render_users
-from src.ui.user_details import render_user_details
-from src.ui.create_user import render_create_user
-from src.ui.lifecycle_view import render_lifecycle
-from src.ui.export_view import render_export
 from src.ui.components import render_footer
-
+from src.ui.create_user import render_create_user
+from src.ui.dashboard import render_dashboard
+from src.ui.export_view import render_export
+from src.ui.lifecycle_view import render_lifecycle
+from src.ui.sidebar import render_sidebar
+from src.ui.styles import load_styles
+from src.ui.user_details import render_user_details
+from src.ui.users import render_users
 
 # ============================================================
 # PAGE CONFIG

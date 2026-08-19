@@ -3,7 +3,6 @@
 import streamlit as st
 
 from src import lifecycle
-
 from src.ui.components import (
     friendly_error,
     get_client,
@@ -258,7 +257,7 @@ def render_lifecycle():
 
                         st.rerun()
 
-                    except Exception as exc:
+                    except Exception as exc:  # noqa: BLE001
 
                         st.error(
                             friendly_error(exc)
@@ -332,7 +331,7 @@ def render_lifecycle():
 
                         st.rerun()
 
-                    except Exception as exc:
+                    except Exception as exc:  # noqa: BLE001
 
                         st.error(
                             friendly_error(exc)
@@ -381,7 +380,7 @@ def render_lifecycle():
 
             st.rerun()
 
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
 
         st.error(
             "Unable to load lifecycle data: "

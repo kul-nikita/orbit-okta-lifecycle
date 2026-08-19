@@ -6,16 +6,14 @@ from html import escape
 import streamlit as st
 
 from src import lifecycle
-
 from src.ui.components import (
     friendly_error,
     get_client,
     get_user_name,
     html,
-    status_badge,
     show_page_header,
+    status_badge,
 )
-
 
 # ============================================================
 # VALIDATION
@@ -104,7 +102,7 @@ def _activate_created_user(user):
 
         st.rerun()
 
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
 
         st.error(
             "Unable to activate the user: "
@@ -308,7 +306,7 @@ def render_create_user():
             # Store result for the next rerender.
             st.session_state.created_user = user
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
 
             st.error(
                 "Unable to create the user: "
