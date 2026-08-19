@@ -8,24 +8,23 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /install
 
 COPY requirements.txt .
-# Install runtime deps into /install using --target so they can be copied into the final image
+# Install runtime deps using --prefix so console entrypoints are installed under /install/bin
 RUN python -m pip install --upgrade pip \
-    && pip install --no-cache-dir --target=/install -r requirements.txt
+    && pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 
 FROM python:3.11-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app:/app/_install:$PYTHONPATH \
     HOME=/home/app \
     STREAMLIT_SERVER_ADDRESS=0.0.0.0 \
     STREAMLIT_SERVER_HEADLESS=true
 
 WORKDIR /app
 
-# Copy installed packages from builder
-COPY --from=builder /install /app/_install
+# Copy installed packages and scripts from builder into /usr/local so scripts are on PATH
+COPY --from=builder /install /usr/local
 
 COPY . .
 
