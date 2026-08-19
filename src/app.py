@@ -40,6 +40,9 @@ defaults = {
     "selected_user": None,
     "user_page": 0,
     "confirm_deactivate": False,
+    "confirm_delete": False,
+    "lifecycle_confirm_deactivate": False,
+    "lifecycle_confirm_delete": False,
 }
 
 for key, value in defaults.items():

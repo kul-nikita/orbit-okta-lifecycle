@@ -1,4 +1,12 @@
-"""Tests for CSV import/export helpers."""
+"""Tests for CSV import/export helpers.
+
+Validates ``export_users_to_csv`` by mocking ``lifecycle.list_users``
+and verifying the output CSV contains correct rows and columns.
+Import tests are pending.
+
+Dependencies:
+    csv, unittest.mock, src.export, src.lifecycle
+"""
 
 import csv
 from unittest import mock

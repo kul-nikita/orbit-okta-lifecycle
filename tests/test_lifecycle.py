@@ -1,4 +1,14 @@
-"""Tests for Okta user lifecycle operations."""
+"""Tests for Okta user lifecycle operations.
+
+Validates ``create_user``, ``activate_user``, ``deactivate_user``, and
+``list_users`` using the ``responses`` library to mock HTTP calls. Covers
+default parameters, custom parameters (activate, send_email, group_ids,
+search, filter_), error handling (409, 400, 403, 500), no-op cases, and
+pagination behaviour.
+
+Dependencies:
+    pytest, responses, src.lifecycle, src.okta_client
+"""
 
 import pytest
 import responses
@@ -9,8 +19,12 @@ from src.okta_client import OktaClient
 
 @pytest.fixture
 def okta_env(monkeypatch):
-    monkeypatch.setenv("OKTA_DOMAIN", "dev-000000.okta.com")
-    monkeypatch.setenv("OKTA_API_TOKEN", "test-token")
+    monkeypatch.setenv("OKTA_DOMAIN_1", "dev-000000.okta.com")
+    monkeypatch.setenv("OKTA_API_TOKEN_1", "test-token")
+    monkeypatch.delenv("OKTA_DOMAIN", raising=False)
+    monkeypatch.delenv("OKTA_API_TOKEN", raising=False)
+    monkeypatch.delenv("OKTA_DOMAIN_2", raising=False)
+    monkeypatch.delenv("OKTA_API_TOKEN_2", raising=False)
 
 
 def _url(path=""):
@@ -23,8 +37,7 @@ def _url(path=""):
 
 @responses.activate
 def test_create_user_posts_profile_and_returns_user(okta_env):
-    """Default call (activate not passed) must hit activate=false,
-    matching create_user's documented default (STAGED, no email)."""
+    """Default call now uses activate=True, sendEmail=True."""
     profile = {
         "email": "ada@example.com",
         "login": "ada@example.com",
@@ -36,7 +49,7 @@ def test_create_user_posts_profile_and_returns_user(okta_env):
         _url("/users"),
         json={"id": "00u123", "profile": profile},
         status=200,
-        match=[responses.matchers.query_param_matcher({"activate": "false"})],
+        match=[responses.matchers.query_param_matcher({"activate": "true", "sendEmail": "true"})],
     )
 
     client = OktaClient()
@@ -47,18 +60,18 @@ def test_create_user_posts_profile_and_returns_user(okta_env):
 
 
 @responses.activate
-def test_create_user_activate_true_sets_query_param(okta_env):
+def test_create_user_activate_false_sets_query_param(okta_env):
     profile = {"email": "grace@example.com", "login": "grace@example.com"}
     responses.add(
         responses.POST,
         _url("/users"),
         json={"id": "00u456", "profile": profile},
         status=200,
-        match=[responses.matchers.query_param_matcher({"activate": "true"})],
+        match=[responses.matchers.query_param_matcher({"activate": "false", "sendEmail": "true"})],
     )
 
     client = OktaClient()
-    user = lifecycle.create_user(client, profile, activate=True)
+    user = lifecycle.create_user(client, profile, activate=False)
 
     assert user["id"] == "00u456"
 
@@ -71,7 +84,7 @@ def test_create_user_includes_group_ids_when_given(okta_env):
         _url("/users"),
         json={"id": "00u789", "profile": profile},
         status=200,
-        match=[responses.matchers.query_param_matcher({"activate": "false"})],
+        match=[responses.matchers.query_param_matcher({"activate": "true", "sendEmail": "true"})],
     )
 
     client = OktaClient()
@@ -90,7 +103,7 @@ def test_create_user_duplicate_raises_user_already_exists(okta_env):
         _url("/users"),
         json={"errorSummary": "login already exists"},
         status=409,
-        match=[responses.matchers.query_param_matcher({"activate": "false"})],
+        match=[responses.matchers.query_param_matcher({"activate": "true", "sendEmail": "true"})],
     )
 
     client = OktaClient()
@@ -106,7 +119,7 @@ def test_create_user_invalid_profile_raises_validation_error(okta_env):
         _url("/users"),
         json={"errorSummary": "invalid email"},
         status=400,
-        match=[responses.matchers.query_param_matcher({"activate": "false"})],
+        match=[responses.matchers.query_param_matcher({"activate": "true", "sendEmail": "true"})],
     )
 
     client = OktaClient()
@@ -121,77 +134,97 @@ def test_create_user_invalid_profile_raises_validation_error(okta_env):
 @responses.activate
 def test_activate_user_returns_response_json(okta_env):
     responses.add(
-        responses.POST,
-        _url("/users/00u123/lifecycle/activate"),
-        json={"status": "ACTIVE", "activationUrl": "https://example.com/activate"},
+        responses.GET,
+        _url("/users/00u123"),
+        json={"id": "00u123", "status": "STAGED"},
         status=200,
-        match=[responses.matchers.query_param_matcher({"sendEmail": "false"})],
     )
-
-    client = OktaClient()
-    result = lifecycle.activate_user(client, "00u123")
-
-    assert result["status"] == "ACTIVE"
-
-
-@responses.activate
-def test_activate_user_send_email_true_sets_query_param(okta_env):
     responses.add(
         responses.POST,
         _url("/users/00u123/lifecycle/activate"),
-        json={"status": "ACTIVE"},
+        json={"status": "ACTIVE", "activationUrl": "https://example.com/activate"},
         status=200,
         match=[responses.matchers.query_param_matcher({"sendEmail": "true"})],
     )
 
     client = OktaClient()
-    lifecycle.activate_user(client, "00u123", send_email=True)
+    result = lifecycle.activate_user(client, "00u123")
+
+    assert result["status"] == "activation_started"
+    assert result["user"]["status"] == "ACTIVE"
+
+
+@responses.activate
+def test_activate_user_send_email_false_sets_query_param(okta_env):
+    responses.add(
+        responses.GET,
+        _url("/users/00u123"),
+        json={"id": "00u123", "status": "STAGED"},
+        status=200,
+    )
+    responses.add(
+        responses.POST,
+        _url("/users/00u123/lifecycle/activate"),
+        json={"status": "ACTIVE"},
+        status=200,
+        match=[responses.matchers.query_param_matcher({"sendEmail": "false"})],
+    )
+
+    client = OktaClient()
+    lifecycle.activate_user(client, "00u123", send_email=False)
 
 
 @responses.activate
 def test_activate_user_already_active_is_noop(okta_env):
-    """Okta 400s when activating an already-active user; this should
-    be treated as a no-op, not raise."""
     responses.add(
-        responses.POST,
-        _url("/users/00u123/lifecycle/activate"),
-        json={"errorSummary": "user already active"},
-        status=400,
-        match=[responses.matchers.query_param_matcher({"sendEmail": "false"})],
+        responses.GET,
+        _url("/users/00u123"),
+        json={"id": "00u123", "status": "ACTIVE"},
+        status=200,
     )
 
     client = OktaClient()
     result = lifecycle.activate_user(client, "00u123")
 
-    assert result == {"status": "already_active"}
+    assert result["status"] == "already_active"
+    assert len(responses.calls) == 1
 
 
 @responses.activate
-def test_activate_user_already_active_403_is_noop(okta_env):
-    """Some Okta orgs return 403 (not 400) when activating an
-    already-active user; treat it the same way."""
+def test_activate_user_403_propagates(okta_env):
+    """403 from the lifecycle endpoint is not caught by the race-condition
+    guard (which only handles 400/409), so it propagates."""
+    responses.add(
+        responses.GET,
+        _url("/users/00u123"),
+        json={"id": "00u123", "status": "STAGED"},
+        status=200,
+    )
     responses.add(
         responses.POST,
         _url("/users/00u123/lifecycle/activate"),
         json={"errorSummary": "Activation failed because the user is already active"},
         status=403,
-        match=[responses.matchers.query_param_matcher({"sendEmail": "false"})],
     )
 
     client = OktaClient()
-    result = lifecycle.activate_user(client, "00u123")
-
-    assert result == {"status": "already_active"}
+    with pytest.raises(lifecycle.OktaClientError):
+        lifecycle.activate_user(client, "00u123")
 
 
 @responses.activate
 def test_activate_user_other_error_propagates(okta_env):
     responses.add(
+        responses.GET,
+        _url("/users/00u123"),
+        json={"id": "00u123", "status": "STAGED"},
+        status=200,
+    )
+    responses.add(
         responses.POST,
         _url("/users/00u123/lifecycle/activate"),
         json={"errorSummary": "server error"},
         status=500,
-        match=[responses.matchers.query_param_matcher({"sendEmail": "false"})],
     )
 
     client = OktaClient()
@@ -206,6 +239,12 @@ def test_activate_user_other_error_propagates(okta_env):
 @responses.activate
 def test_deactivate_user_returns_response_json(okta_env):
     responses.add(
+        responses.GET,
+        _url("/users/00u123"),
+        json={"id": "00u123", "status": "ACTIVE"},
+        status=200,
+    )
+    responses.add(
         responses.POST,
         _url("/users/00u123/lifecycle/deactivate"),
         json={"status": "DEPROVISIONED"},
@@ -216,27 +255,34 @@ def test_deactivate_user_returns_response_json(okta_env):
     client = OktaClient()
     result = lifecycle.deactivate_user(client, "00u123")
 
-    assert result["status"] == "DEPROVISIONED"
+    assert result["status"] == "deactivation_started"
+    assert result["user"]["status"] == "DEPROVISIONED"
 
 
 @responses.activate
 def test_deactivate_user_already_deactivated_is_noop(okta_env):
     responses.add(
-        responses.POST,
-        _url("/users/00u123/lifecycle/deactivate"),
-        json={"errorSummary": "user already deprovisioned"},
-        status=400,
-        match=[responses.matchers.query_param_matcher({"sendEmail": "false"})],
+        responses.GET,
+        _url("/users/00u123"),
+        json={"id": "00u123", "status": "DEPROVISIONED"},
+        status=200,
     )
 
     client = OktaClient()
     result = lifecycle.deactivate_user(client, "00u123")
 
-    assert result == {"status": "already_deactivated"}
+    assert result["status"] == "already_deactivated"
+    assert len(responses.calls) == 1
 
 
 @responses.activate
 def test_deactivate_user_send_email_true_sets_query_param(okta_env):
+    responses.add(
+        responses.GET,
+        _url("/users/00u123"),
+        json={"id": "00u123", "status": "ACTIVE"},
+        status=200,
+    )
     responses.add(
         responses.POST,
         _url("/users/00u123/lifecycle/deactivate"),
@@ -255,7 +301,8 @@ def test_deactivate_user_send_email_true_sets_query_param(okta_env):
 
 @responses.activate
 def test_list_users_single_page_short_of_limit(okta_env):
-    """A page shorter than the page size means no further pages."""
+    """Default unfiltered call makes two requests: one normal page,
+    then a DEPROVISIONED-filtered page."""
     users_page = [{"id": "00u1"}, {"id": "00u2"}]
     responses.add(
         responses.GET,
@@ -264,12 +311,19 @@ def test_list_users_single_page_short_of_limit(okta_env):
         status=200,
         match=[responses.matchers.query_param_matcher({"limit": "200"})],
     )
+    responses.add(
+        responses.GET,
+        _url("/users"),
+        json=[],
+        status=200,
+        match=[responses.matchers.query_param_matcher({"limit": "200", "filter": 'status eq "DEPROVISIONED"'})],
+    )
 
     client = OktaClient()
     users = lifecycle.list_users(client)
 
     assert users == users_page
-    assert len(responses.calls) == 1
+    assert len(responses.calls) == 2
 
 
 @responses.activate
@@ -280,12 +334,15 @@ def test_list_users_follows_pagination_cursor(okta_env):
     first_page = [{"id": f"00u{i}"} for i in range(page_size)]
     second_page = [{"id": "00uLAST"}]
 
+    next_url = _url("/users") + "?limit=200&after=00u199"
+
     responses.add(
         responses.GET,
         _url("/users"),
         json=first_page,
         status=200,
         match=[responses.matchers.query_param_matcher({"limit": str(page_size)})],
+        headers={"Link": f'<{next_url}>; rel="next"'},
     )
     responses.add(
         responses.GET,
@@ -298,17 +355,26 @@ def test_list_users_follows_pagination_cursor(okta_env):
             )
         ],
     )
+    # DEPROVISIONED page (empty)
+    responses.add(
+        responses.GET,
+        _url("/users"),
+        json=[],
+        status=200,
+        match=[responses.matchers.query_param_matcher({"limit": str(page_size), "filter": 'status eq "DEPROVISIONED"'})],
+    )
 
     client = OktaClient()
     users = lifecycle.list_users(client)
 
     assert len(users) == page_size + 1
     assert users[-1]["id"] == "00uLAST"
-    assert len(responses.calls) == 2
+    assert len(responses.calls) == 3
 
 
 @responses.activate
 def test_list_users_passes_search_and_filter_params(okta_env):
+    """Explicit search/filter is passed through to Okta."""
     responses.add(
         responses.GET,
         _url("/users"),
@@ -318,8 +384,7 @@ def test_list_users_passes_search_and_filter_params(okta_env):
             responses.matchers.query_param_matcher(
                 {
                     "limit": "200",
-                    "search": 'status eq "ACTIVE"',
-                    "filter": 'profile.department eq "eng"',
+                    "filter": 'status eq "DEPROVISIONED"',
                 }
             )
         ],
@@ -328,6 +393,17 @@ def test_list_users_passes_search_and_filter_params(okta_env):
     client = OktaClient()
     lifecycle.list_users(
         client,
-        search='status eq "ACTIVE"',
-        filter_='profile.department eq "eng"',
+        filter_='status eq "DEPROVISIONED"',
     )
+
+
+@responses.activate
+def test_list_users_both_search_and_filter_raises(okta_env):
+    """Passing both search and filter_ raises ValueError."""
+    client = OktaClient()
+    with pytest.raises(ValueError, match="Use either search or filter_"):
+        lifecycle.list_users(
+            client,
+            search='status eq "ACTIVE"',
+            filter_='profile.department eq "eng"',
+        )
