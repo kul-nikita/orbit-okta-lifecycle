@@ -8,7 +8,6 @@ import streamlit as st
 from src import lifecycle
 from src.okta_client import OktaClient, OktaClientError
 
-
 # ============================================================
 # HTML HELPER
 # ============================================================

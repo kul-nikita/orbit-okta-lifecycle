@@ -28,7 +28,7 @@ def step(name, fn):
         print(f"  PASS  response: {result}")
         RESULTS.append((name, True, result))
         return result
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         print(f"  FAIL  error: {e}")
         tb = traceback.format_exc()
         print(tb)

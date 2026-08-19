@@ -3,7 +3,6 @@
 import streamlit as st
 
 from src import lifecycle
-
 from src.ui.components import (
     friendly_error,
     get_client,

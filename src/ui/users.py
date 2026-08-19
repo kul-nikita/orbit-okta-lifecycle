@@ -12,7 +12,6 @@ from src.ui.components import (
     status_badge,
 )
 
-
 PAGE_SIZE = 5
 
 

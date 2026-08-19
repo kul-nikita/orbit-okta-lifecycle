@@ -6,16 +6,14 @@ from html import escape
 import streamlit as st
 
 from src import lifecycle
-
 from src.ui.components import (
     friendly_error,
     get_client,
     get_user_name,
     html,
-    status_badge,
     show_page_header,
+    status_badge,
 )
-
 
 # ============================================================
 # VALIDATION
