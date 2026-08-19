@@ -334,6 +334,7 @@ def bulk_import(filepath):
 
 
 def main():
+    """Entry point for the Orbit CLI."""
     load_dotenv()
     cli()
 

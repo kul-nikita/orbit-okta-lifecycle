@@ -1,0 +1,214 @@
+{
+  "info": {
+    "_postman_id": "e8dbb464-4a62-4817-af46-41343b1d4c14",
+    "name": "User Lifecycle Orchestrator",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "57484381",
+    "_collection_link": "https://go.postman.co/collection/57484381-e8dbb464-4a62-4817-af46-41343b1d4c14?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "List Users",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            },
+            {
+              "key": "value",
+              "value": "{{okta_api_token_15g8}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://{{okta_domain}}/api/v1/users",
+          "protocol": "https",
+          "host": [
+            "{{okta_domain}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create User",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            },
+            {
+              "key": "value",
+              "value": "{{okta_api_token_15g8}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"profile\": {\r\n    \"firstName\": \"Test\",\r\n    \"lastName\": \"User\",\r\n    \"email\": \"okta.lifecycle.test.20260817@example.com\",\r\n    \"login\": \"okta.lifecycle.test.20260817@example.com\"\r\n  }\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://{{okta_domain}}/api/v1/users?activate=false",
+          "protocol": "https",
+          "host": [
+            "{{okta_domain}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users"
+          ],
+          "query": [
+            {
+              "key": "activate",
+              "value": "false"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Activate User",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            },
+            {
+              "key": "value",
+              "value": "{{okta_api_token_15g8}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://{{okta_domain}}/api/v1/users/{{user_id}}/lifecycle/activate",
+          "protocol": "https",
+          "host": [
+            "{{okta_domain}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{{user_id}}",
+            "lifecycle",
+            "activate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Deactivate User",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            },
+            {
+              "key": "value",
+              "value": "{{okta_api_token_15g8}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://{{okta_domain}}/api/v1/users/{{user_id}}/lifecycle/deactivate",
+          "protocol": "https",
+          "host": [
+            "{{okta_domain}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{{user_id}}",
+            "lifecycle",
+            "deactivate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete User",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            },
+            {
+              "key": "value",
+              "value": "{{okta_api_token_15g8}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://{{okta_domain}}/api/v1/users/{{user_id}}",
+          "protocol": "https",
+          "host": [
+            "{{okta_domain}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{{user_id}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "okta_api_token_15g8",
+      "secret": true
+    }
+  ]
+}

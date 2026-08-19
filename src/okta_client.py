@@ -53,6 +53,16 @@ class OktaClient:
         label: str | None = None,
         session: requests.Session | None = None,
     ):
+        """Initialise the Okta client.
+
+        Args:
+            domain: Okta org domain. Falls back to ``OKTA_DOMAIN_1``
+                then ``OKTA_DOMAIN`` env vars.
+            api_token: SSWS API token. Falls back to ``OKTA_API_TOKEN_1``
+                then ``OKTA_API_TOKEN`` env vars.
+            label: Human-readable tenant label (e.g. ``"Tenant 1"``).
+            session: Optional pre-configured ``requests.Session``.
+        """
         self.domain = (
             domain
             or os.getenv("OKTA_DOMAIN_1")
@@ -87,6 +97,7 @@ class OktaClient:
 
     @property
     def base_url(self) -> str:
+        """Full base URL for the Okta REST API."""
         return f"https://{self.domain}/api/v1"
 
     def request(self, method: str, path: str, **kwargs) -> requests.Response:
@@ -170,6 +181,7 @@ class OktaClient:
         return BACKOFF_BASE_SECONDS * (2**attempt)
 
     def get(self, path: str, **kwargs) -> requests.Response:
+        """Send a GET request to the given Okta API path."""
         return self.request("GET", path, **kwargs)
 
     def post(
@@ -178,6 +190,7 @@ class OktaClient:
         json: dict[str, Any] | None = None,
         **kwargs,
     ) -> requests.Response:
+        """Send a POST request to the given Okta API path."""
         return self.request(
             "POST",
             path,
@@ -186,6 +199,7 @@ class OktaClient:
         )
 
     def delete(self, path: str, **kwargs) -> requests.Response:
+        """Send a DELETE request to the given Okta API path."""
         return self.request("DELETE", path, **kwargs)
 
 

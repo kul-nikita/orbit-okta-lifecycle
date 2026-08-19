@@ -1,0 +1,22 @@
+{
+	"id": "ce4db1db-581b-4b8f-9ed9-daf2aba262fc",
+	"name": "User Lifecycle Orchestrator",
+	"values": [
+		{
+			"key": "okta_domain",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"color": null,
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2026-08-17T19:08:08.705Z",
+	"_postman_exported_using": "Postman/12.24.0"
+}

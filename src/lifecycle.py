@@ -18,7 +18,6 @@ as a successful no-op. The user's actual Okta status is authoritative.
 
 from __future__ import annotations
 
-from typing import Any
 from urllib.parse import parse_qs, quote, urlparse
 
 from .okta_client import OktaClientError
@@ -74,14 +73,17 @@ def _error_message(exc: OktaClientError) -> str:
 
 
 def _is_not_found(exc: OktaClientError) -> bool:
+    """Return True if the error indicates a 404 Not Found."""
     return exc.status_code == 404
 
 
 def _is_conflict(exc: OktaClientError) -> bool:
+    """Return True if the error indicates a 409 Conflict."""
     return exc.status_code == 409
 
 
 def _response_json(response):
+    """Parse and return the JSON body of an Okta API response."""
     return response.json()
 
 

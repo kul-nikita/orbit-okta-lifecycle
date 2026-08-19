@@ -704,6 +704,7 @@ def render_footer():
 
 
 def friendly_error(exc):
+    """Format an exception into a user-friendly error message."""
     if isinstance(exc, OktaClientError):
         return (
             f"{exc}\n\n"
