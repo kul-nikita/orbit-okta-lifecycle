@@ -20,3 +20,9 @@ jobs:
         run: ruff check .
       - name: Test
         run: pytest -v
+      - name: Build Docker image
+        run: |
+          docker build -t orbit:ci .
+      - name: Smoke-test Docker image (check Streamlit import)
+        run: |
+          docker run --rm --env-file .env.example orbit:ci python -c "import streamlit,sys; print('streamlit', streamlit.__version__); sys.exit(0)"

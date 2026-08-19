@@ -1,5 +1,5 @@
-requests
-click
-python-dotenv
-streamlit
-responses
+requests==2.34.2
+click==8.4.2
+python-dotenv==1.2.3
+streamlit==1.61.1
+responses==0.26.2
