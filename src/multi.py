@@ -8,14 +8,26 @@ tenant label.
 from . import lifecycle
 
 
-def create_user(clients, profile, activate=False, group_ids=None):
+def create_user(clients, profile, activate=False, send_email=True, group_ids=None):
     """Create a user across all tenants. Returns per-tenant results."""
     results = {}
     for client in clients:
         try:
             result = lifecycle.create_user(
-                client, profile, activate=activate, group_ids=group_ids
+                client, profile, activate=activate, send_email=send_email, group_ids=group_ids
             )
+            results[client.label] = result
+        except Exception as exc:
+            results[client.label] = {"error": str(exc)}
+    return results
+
+
+def get_user(clients, user_id):
+    """Get a user across all tenants. Returns per-tenant results."""
+    results = {}
+    for client in clients:
+        try:
+            result = lifecycle.get_user(client, user_id)
             results[client.label] = result
         except Exception as exc:
             results[client.label] = {"error": str(exc)}
@@ -36,12 +48,88 @@ def activate_user(clients, user_id, send_email=False):
     return results
 
 
+def reactivate_user(clients, user_id, send_email=True):
+    """Reactivate a user across all tenants. Returns per-tenant results."""
+    results = {}
+    for client in clients:
+        try:
+            result = lifecycle.reactivate_user(
+                client, user_id, send_email=send_email
+            )
+            results[client.label] = result
+        except Exception as exc:
+            results[client.label] = {"error": str(exc)}
+    return results
+
+
 def deactivate_user(clients, user_id, send_email=False):
     """Deactivate a user across all tenants. Returns per-tenant results."""
     results = {}
     for client in clients:
         try:
             result = lifecycle.deactivate_user(
+                client, user_id, send_email=send_email
+            )
+            results[client.label] = result
+        except Exception as exc:
+            results[client.label] = {"error": str(exc)}
+    return results
+
+
+def suspend_user(clients, user_id):
+    """Suspend a user across all tenants. Returns per-tenant results."""
+    results = {}
+    for client in clients:
+        try:
+            result = lifecycle.suspend_user(client, user_id)
+            results[client.label] = result
+        except Exception as exc:
+            results[client.label] = {"error": str(exc)}
+    return results
+
+
+def unsuspend_user(clients, user_id):
+    """Unsuspend a user across all tenants. Returns per-tenant results."""
+    results = {}
+    for client in clients:
+        try:
+            result = lifecycle.unsuspend_user(client, user_id)
+            results[client.label] = result
+        except Exception as exc:
+            results[client.label] = {"error": str(exc)}
+    return results
+
+
+def unlock_user(clients, user_id):
+    """Unlock a user across all tenants. Returns per-tenant results."""
+    results = {}
+    for client in clients:
+        try:
+            result = lifecycle.unlock_user(client, user_id)
+            results[client.label] = result
+        except Exception as exc:
+            results[client.label] = {"error": str(exc)}
+    return results
+
+
+def delete_user(clients, user_id):
+    """Delete a user across all tenants. Returns per-tenant results."""
+    results = {}
+    for client in clients:
+        try:
+            result = lifecycle.delete_user(client, user_id)
+            results[client.label] = result
+        except Exception as exc:
+            results[client.label] = {"error": str(exc)}
+    return results
+
+
+def ensure_user_active(clients, user_id, send_email=True):
+    """Move a user toward ACTIVE across all tenants. Returns per-tenant results."""
+    results = {}
+    for client in clients:
+        try:
+            result = lifecycle.ensure_user_active(
                 client, user_id, send_email=send_email
             )
             results[client.label] = result

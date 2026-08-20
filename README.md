@@ -63,30 +63,152 @@ colliding.
 
 ```
 python -m src.cli --help
+```
 
-# Create a user on all tenants
-python -m src.cli create --email ada@example.com --first-name Ada --last-name Lovelace
+### Quick reference — all commands
 
-# Activate a user on all tenants
-python -m src.cli activate 00u1abc123
+```bash
+# User lifecycle
+python -m src.cli create --email USER --first-name FIRST --last-name LAST
+python -m src.cli get USER_ID
+python -m src.cli list
+python -m src.cli activate USER_ID
+python -m src.cli reactivate USER_ID
+python -m src.cli deactivate USER_ID
+python -m src.cli suspend USER_ID
+python -m src.cli unsuspend USER_ID
+python -m src.cli unlock USER_ID
+python -m src.cli ensure-active USER_ID
+python -m src.cli delete USER_ID
 
-# Deactivate a user on all tenants
-python -m src.cli deactivate 00u1abc123
-
-# Export all users from all tenants to CSV
+# Import / export
 python -m src.cli export --output users.csv
-
-# Bulk import users from CSV to all tenants
 python -m src.cli bulk-import new_users.csv
 ```
 
-Each command prints results per tenant so you can see which tenant
-responded and what happened.
+### Detailed command reference
+
+#### `create`
+
+Creates a user on all configured tenants.
+
+```
+python -m src.cli create --email ada@example.com --first-name Ada --last-name Lovelace
+```
+
+Options (all default to `True`):
+
+| Flag | Default | Effect |
+| --- | --- | --- |
+| `--activate / --no-activate` | `True` | Activate the user immediately. |
+| `--send-email / --no-send-email` | `True` | Send Okta's activation email to the user. |
+
+**Default flow** (`--activate --send-email`): the user is created, activated,
+and receives an activation email. They click the link, set their password,
+and can log in. No further CLI steps are needed.
+
+**Staged flow** (`--no-activate`): the user is created in `STAGED` status.
+Run `activate` separately when ready.
+
+#### `get`
+
+Shows the current Okta state of a user on all tenants.
+
+```
+python -m src.cli get 00u1abc123
+```
+
+#### `list`
+
+Lists all users across all tenants. Supports optional Okta search/filter.
+
+```
+python -m src.cli list
+python -m src.cli list --search 'status eq "ACTIVE"'
+```
+
+#### `activate`
+
+Activates a `STAGED` or `DEPROVISIONED` user. Sends an activation email
+by default.
+
+```
+python -m src.cli activate 00u1abc123
+python -m src.cli activate 00u1abc123 --no-send-email
+```
+
+#### `reactivate`
+
+Re-sends the activation email to a `PROVISIONED` or `RECOVERY` user.
+
+```
+python -m src.cli reactivate 00u1abc123
+```
+
+#### `deactivate`
+
+Deactivates a user (moves them to `DEPROVISIONED`). Does **not** send
+an email by default.
+
+```
+python -m src.cli deactivate 00u1abc123
+python -m src.cli deactivate 00u1abc123 --send-email
+```
+
+#### `suspend` / `unsuspend`
+
+Suspends an `ACTIVE` user or unsuspends a `SUSPENDED` user.
+
+```
+python -m src.cli suspend 00u1abc123
+python -m src.cli unsuspend 00u1abc123
+```
+
+#### `unlock`
+
+Unlocks a `LOCKED_OUT` user.
+
+```
+python -m src.cli unlock 00u1abc123
+```
+
+#### `ensure-active`
+
+Automatically moves a user toward `ACTIVE` regardless of their current
+status — activates, unsuspends, or unlocks as needed.
+
+```
+python -m src.cli ensure-active 00u1abc123
+```
+
+#### `delete`
+
+Permanently deletes a `DEPROVISIONED` user (asks for confirmation).
+
+```
+python -m src.cli delete 00u1abc123
+```
+
+#### `export`
+
+Exports all users from all tenants to a CSV file.
+
+```
+python -m src.cli export --output users.csv
+```
+
+#### `bulk-import`
+
+Creates users from a CSV file on all tenants.
+
+```
+python -m src.cli bulk-import new_users.csv
+```
 
 ## Running the Streamlit UI
 
 ```
-streamlit run src/app.py
+.venv\Scripts\python.exe -m streamlit run src/app.py
 ```
 
 The dashboard shows all users from all configured tenants with a
