@@ -3,3 +3,4 @@ click==8.4.2
 python-dotenv==1.2.3
 streamlit==1.61.1
 responses==0.26.2
+pyfiglet==1.0.2

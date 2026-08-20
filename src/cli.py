@@ -8,10 +8,13 @@ Run from the repo root with:
 from __future__ import annotations
 
 import click
+import pyfiglet
 from dotenv import load_dotenv
 
 from . import export, multi
 from .okta_client import OktaClientError, get_clients
+
+__version__ = "1.0.0"
 
 
 def _handle_error(exc):
@@ -42,8 +45,10 @@ def _print_result(label, result):
         click.echo(f"  [{label}] Error: {result['error']}")
     else:
         status = result.get("status", "unknown") if isinstance(result, dict) else str(result)
-        user = result.get("user", {}) if isinstance(result, dict) else {}
-        user_id = user.get("id") if isinstance(user, dict) else None
+        user_id = result.get("id") if isinstance(result, dict) else None
+        if not user_id:
+            user = result.get("user", {}) if isinstance(result, dict) else {}
+            user_id = user.get("id") if isinstance(user, dict) else None
         if user_id:
             click.echo(f"  [{label}] Status: {status}  User: {user_id}")
         else:
@@ -53,6 +58,10 @@ def _print_result(label, result):
 @click.group()
 def cli():
     """Orbit commands for managing Okta user lifecycle across multiple tenants."""
+    banner = pyfiglet.figlet_format("ORBIT", font="standard")
+    click.echo(banner.rstrip())
+    click.echo("User Lifecycle Orchestrator | Powered by Okta")
+    click.echo(f"v{__version__}\n")
 
 
 @cli.command()
